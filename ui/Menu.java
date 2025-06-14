@@ -54,57 +54,106 @@ public class Menu {
     }
 
     public static void exibirMenuPrincipal() {
-        String[] opcoes = {"Gerenciar Leilões", "Gerenciar Leiloeiros", "Gerenciar Participantes", "Gerenciar Categorias", "Sair"};
+        // 3. O menu principal agora reflete a separação das tarefas
+        String[] opcoes = {
+                "Participar de um Leilão",
+                "Gerenciar Leilões (Admin)",
+                "Gerenciar Leiloeiros",
+                "Gerenciar Participantes",
+                "Gerenciar Categorias",
+                "Sair"
+        };
         int escolha;
         do {
             escolha = JOptionPane.showOptionDialog(null, "Menu Principal", "Sistema de Leilões",
                     JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, opcoes, opcoes[0]);
 
             switch (escolha) {
-                case 0: exibirMenuLeiloes(); break;
-                case 1: exibirMenuLeiloeiros(); break;
-                case 2: exibirMenuParticipantes(); break;
-                case 3: exibirMenuCategorias(); break;
-                case 4:
-                    // Salvar todos os dados
-                    ArquivoUtil.salvarDados(categoriaService.listar(), ARQUIVO_CATEGORias);
-                    ArquivoUtil.salvarDados(leiloeiroService.listar(), ARQUIVO_LEILOEIROS);
-                    ArquivoUtil.salvarDados(participanteService.listar(), ARQUIVO_PARTICIPANTES);
-                    ArquivoUtil.salvarDados(leilaoCrudService.listar(), ARQUIVO_LEILOES);
+                case 0: exibirMenuParticiparLeilao(); break; // <-- NOVO
+                case 1: exibirMenuGerenciarLeiloes(); break; // <-- NOVO
+                case 2: exibirMenuLeiloeiros(); break;
+                case 3: exibirMenuParticipantes(); break;
+                case 4: exibirMenuCategorias(); break;
+                case 5:
+                    // ... (código para salvar os dados)
+                    ArquivoUtil.salvarDados(categoriaService.listar(), "categorias.dat");
+                    ArquivoUtil.salvarDados(leiloeiroService.listar(), "leiloeiros.dat");
+                    ArquivoUtil.salvarDados(participanteService.listar(), "participantes.dat");
+                    ArquivoUtil.salvarDados(leilaoCrudService.listar(), "leiloes.dat");
                     JOptionPane.showMessageDialog(null, "Saindo e salvando dados...");
                     break;
             }
-        } while (escolha != 4);
+        } while (escolha != 5);
     }
 
     // --- GERENCIAMENTO DE LEILÕES ---
-    public static void exibirMenuLeiloes() {
-        String[] opcoes = {"Criar Novo Leilão", "Listar Leilões", "Adicionar Item a um Leilão", "Dar Lance em Item", "Ver Resultado", "Voltar"};
+// 1. O método antigo foi renomeado e focado em tarefas administrativas
+    public static void exibirMenuGerenciarLeiloes() {
+        // A opção "Adicionar Item" foi trocada por "Gerenciar Itens"
+        String[] opcoes = {"Criar Leilão", "Listar Leilões", "Editar Leilão", "Deletar Leilão", "Gerenciar Itens de um Leilão", "Voltar"};
         int escolha;
         do {
-            escolha = JOptionPane.showOptionDialog(null, "Gerenciar Leilões", "Sistema de Leilões",
+            escolha = JOptionPane.showOptionDialog(null, "Gerenciar Leilões (Admin)", "Sistema de Leilões",
                     JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, opcoes, opcoes[0]);
+
             switch (escolha) {
                 case 0: criarLeilao(); break;
                 case 1: listarLeiloes(); break;
-                case 2: adicionarItemAoLeilao(); break;
-                case 3: darLanceEmItem(); break;
-                case 4: verResultadoLeilao(); break; // <-- MUDANÇA FINAL AQUI
+                case 2: editarLeilao(); break;
+                case 3: deletarLeilao(); break;
+
+                // --- MUDANÇA PRINCIPAL AQUI ---
+                // Este case agora abre o novo submenu de itens
+                case 4:
+                    try {
+                        listarLeiloes();
+                        int idLeilao = Integer.parseInt(JOptionPane.showInputDialog("Digite o ID do Leilão cujos itens deseja gerenciar:"));
+                        Leilao leilaoEscolhido = leilaoCrudService.buscarPorId(idLeilao);
+
+                        if(leilaoEscolhido != null) {
+                            // Chama o novo menu, passando o leilão como contexto
+                            exibirMenuItem(leilaoEscolhido);
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Leilão não encontrado.");
+                        }
+                    } catch (Exception e) {
+                        JOptionPane.showMessageDialog(null, "ID inválido.");
+                    }
+                    break;
+
                 case 5: break;
             }
         } while (escolha != 5);
     }
 
+    // 2. Criamos um menu totalmente novo para as operações do participante
+    public static void exibirMenuParticiparLeilao() {
+        String[] opcoes = {"Listar Leilões Ativos", "Dar Lance em Item", "Ver Resultado de um Leilão", "Voltar"};
+        int escolha;
+        do {
+            escolha = JOptionPane.showOptionDialog(null, "Participar de um Leilão", "Sistema de Leilões",
+                    JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, opcoes, opcoes[0]);
+
+            switch (escolha) {
+                case 0: listarLeiloes(); break; // Reutilizamos o método de listar
+                case 1: darLanceEmItem(); break;
+                case 2: verResultadoLeilao(); break;
+                case 3: break;
+            }
+        } while (escolha != 3);
+    }
+
     private static void criarLeilao() {
         try {
             int idLeilao = Integer.parseInt(JOptionPane.showInputDialog("ID do novo Leilão:"));
+            String descricao = JOptionPane.showInputDialog("Descrição do novo Leilão (ex: Leilão de Carros Antigos):"); // <-- NOVA LINHA
 
-            listarLeiloeiros(); // Mostra leiloeiros disponíveis
+            listarLeiloeiros();
             int idLeiloeiro = Integer.parseInt(JOptionPane.showInputDialog("Digite o ID do Leiloeiro para este leilão:"));
             Leiloeiro leiloeiroEscolhido = leiloeiroService.buscarPorId(idLeiloeiro);
 
             if (leiloeiroEscolhido != null) {
-                Leilao novoLeilao = new Leilao(idLeilao, leiloeiroEscolhido);
+                Leilao novoLeilao = new Leilao(idLeilao, descricao, leiloeiroEscolhido); // <-- DESCRIÇÃO ADICIONADA
                 leilaoCrudService.inserir(novoLeilao);
                 JOptionPane.showMessageDialog(null, "Leilão criado com sucesso!");
             } else {
@@ -121,48 +170,59 @@ public class Menu {
         StringBuilder sb = new StringBuilder("Leilões Cadastrados:\n\n");
         for (Leilao l : leiloes) {
             sb.append("ID: ").append(l.getId())
+                    .append(" | Descrição: ").append(l.getDescricao()) // <-- LINHA ATUALIZADA
                     .append(" | Leiloeiro: ").append(l.getLeiloeiro().getNome())
-                    .append(" | Ativo: ").append(l.isAtivo())
                     .append(" | Itens: ").append(l.getItens().size())
                     .append("\n");
         }
         exibirEmAreaDeTexto(sb.toString(), "Lista de Leilões");
     }
 
-    private static void adicionarItemAoLeilao() {
+    private static void editarLeilao() {
         try {
             listarLeiloes();
-            int idLeilao = Integer.parseInt(JOptionPane.showInputDialog("Digite o ID do Leilão para adicionar o item:"));
-            Leilao leilaoEscolhido = leilaoCrudService.buscarPorId(idLeilao);
+            int id = Integer.parseInt(JOptionPane.showInputDialog("Digite o ID do leilão que deseja editar:"));
+            Leilao leilaoExistente = leilaoCrudService.buscarPorId(id);
 
-            if (leilaoEscolhido == null) {
-                JOptionPane.showMessageDialog(null, "Leilão não encontrado!", "Erro", JOptionPane.ERROR_MESSAGE);
-                return;
+            if (leilaoExistente != null) {
+                String novaDescricao = JOptionPane.showInputDialog("Digite a nova descrição:", leilaoExistente.getDescricao());
+
+                // Criamos um objeto temporário com os novos dados para enviar ao serviço
+                Leilao leilaoAtualizado = new Leilao(id, novaDescricao, leilaoExistente.getLeiloeiro());
+
+                leilaoCrudService.editar(id, leilaoAtualizado);
+                JOptionPane.showMessageDialog(null, "Descrição do leilão atualizada com sucesso!");
+            } else {
+                JOptionPane.showMessageDialog(null, "Leilão não encontrado.", "Erro", JOptionPane.ERROR_MESSAGE);
             }
-
-            String descricaoItem = JOptionPane.showInputDialog("Descrição do novo item:");
-            double valorBase = Double.parseDouble(JOptionPane.showInputDialog("Valor base do item (ex: 150.99):"));
-
-            listarCategorias();
-            int idCategoria = Integer.parseInt(JOptionPane.showInputDialog("Digite o ID da Categoria para este item:"));
-            Categoria categoriaEscolhida = categoriaService.buscarPorId(idCategoria);
-
-            if (categoriaEscolhida == null) {
-                JOptionPane.showMessageDialog(null, "Categoria não encontrada!", "Erro", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            Item novoItem = new Item(descricaoItem, valorBase, categoriaEscolhida);
-            leilaoOperacaoService.adicionarItem(leilaoEscolhido, novoItem);
-
-            JOptionPane.showMessageDialog(null, "Item '" + descricaoItem + "' adicionado ao leilão " + idLeilao + " com sucesso!");
-
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(null, "Valor ou ID inválido. Por favor, use números.", "Erro", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Ocorreu um erro: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Erro ao editar leilão: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    private static void deletarLeilao() {
+        try {
+            listarLeiloes();
+            int id = Integer.parseInt(JOptionPane.showInputDialog("Digite o ID do leilão que deseja DELETAR:"));
+            Leilao leilaoParaDeletar = leilaoCrudService.buscarPorId(id);
+
+            if (leilaoParaDeletar != null) {
+                int confirmacao = JOptionPane.showConfirmDialog(null,
+                        "Tem certeza que deseja deletar o leilão " + id + "?\nEsta ação não pode ser desfeita.",
+                        "Confirmar Deleção", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+                if (confirmacao == JOptionPane.YES_OPTION) {
+                    leilaoCrudService.deletar(id);
+                    JOptionPane.showMessageDialog(null, "Leilão deletado com sucesso.");
+                }
+            } else {
+                JOptionPane.showMessageDialog(null, "Leilão não encontrado.", "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Erro ao deletar leilão: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private static void darLanceEmItem() {
         try {
             // 1. Escolher o Leilão
@@ -448,4 +508,138 @@ public class Menu {
         scrollPane.setPreferredSize(new Dimension(400, 300));
         JOptionPane.showMessageDialog(null, scrollPane, titulo, JOptionPane.INFORMATION_MESSAGE);
     }
+    // --- INÍCIO DO NOVO BLOCO DE GERENCIAMENTO DE ITENS ---
+
+    /**
+     * Exibe um menu contextual para gerenciar os itens de um leilão específico.
+     * @param leilao O leilão cujos itens serão gerenciados.
+     */
+    private static void exibirMenuItem(Leilao leilao) {
+        if (leilao == null) return;
+        String[] opcoes = {"Listar Itens deste Leilão", "Adicionar Novo Item", "Editar Item Existente", "Deletar Item", "Voltar"};
+        int escolha;
+        do {
+            escolha = JOptionPane.showOptionDialog(null,
+                    "Gerenciando Itens do Leilão: " + leilao.getId() + " - " + leilao.getDescricao(),
+                    "Menu de Itens",
+                    JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, opcoes, opcoes[0]);
+
+            switch (escolha) {
+                case 0: listarItensDoLeilao(leilao); break;
+                case 1: adicionarItem(leilao); break;
+                case 2: editarItem(leilao); break;
+                case 3: deletarItem(leilao); break;
+                case 4: break;
+            }
+        } while (escolha != 4);
+    }
+
+    /**
+     * Lista no console os itens de um leilão específico.
+     * @param leilao O leilão a ter seus itens listados.
+     */
+    private static void listarItensDoLeilao(Leilao leilao) {
+        ArrayList<Item> itens = leilao.getItens();
+        if (itens.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Este leilão ainda não possui itens.");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Itens do Leilão " + leilao.getId() + ":\n\n");
+        for (Item item : itens) {
+            sb.append("Descrição: ").append(item.getDescricao())
+                    .append(" | Categoria: ").append(item.getCategoria().getNome())
+                    .append(" | Valor Base: R$").append(item.getValorBase())
+                    .append("\n");
+        }
+        exibirEmAreaDeTexto(sb.toString(), "Itens do Leilão");
+    }
+
+    /**
+     * Adiciona um novo item a um leilão específico.
+     * @param leilao O leilão que receberá o novo item.
+     */
+    private static void adicionarItem(Leilao leilao) {
+        try {
+            String descricaoItem = JOptionPane.showInputDialog("Descrição do novo item:");
+            double valorBase = Double.parseDouble(JOptionPane.showInputDialog("Valor base do item (ex: 150.99):"));
+
+            listarCategorias();
+            int idCategoria = Integer.parseInt(JOptionPane.showInputDialog("Digite o ID da Categoria para este item:"));
+            Categoria categoriaEscolhida = categoriaService.buscarPorId(idCategoria);
+
+            if (categoriaEscolhida != null) {
+                Item novoItem = new Item(descricaoItem, valorBase, categoriaEscolhida);
+                leilaoOperacaoService.adicionarItem(leilao, novoItem);
+                JOptionPane.showMessageDialog(null, "Item adicionado com sucesso!");
+            } else {
+                JOptionPane.showMessageDialog(null, "Categoria não encontrada!", "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Erro ao adicionar item: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Edita um item existente dentro de um leilão.
+     * @param leilao O leilão que contém o item.
+     */
+    private static void editarItem(Leilao leilao) {
+        try {
+            listarItensDoLeilao(leilao);
+            String descItem = JOptionPane.showInputDialog("Digite a descrição EXATA do item que deseja editar:");
+
+            Item itemParaEditar = null;
+            for(Item item : leilao.getItens()){
+                if(item.getDescricao().equalsIgnoreCase(descItem)) {
+                    itemParaEditar = item;
+                    break;
+                }
+            }
+
+            if (itemParaEditar != null) {
+                String novaDescricao = JOptionPane.showInputDialog("Digite a nova descrição:", itemParaEditar.getDescricao());
+                double novoValor = Double.parseDouble(JOptionPane.showInputDialog("Digite o novo valor base:", itemParaEditar.getValorBase()));
+
+                leilaoOperacaoService.editarItem(itemParaEditar, novaDescricao, novoValor);
+                JOptionPane.showMessageDialog(null, "Item atualizado com sucesso!");
+            } else {
+                JOptionPane.showMessageDialog(null, "Item não encontrado.", "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Erro ao editar item: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Deleta um item de um leilão.
+     * @param leilao O leilão que contém o item.
+     */
+    private static void deletarItem(Leilao leilao) {
+        try {
+            listarItensDoLeilao(leilao);
+            String descItem = JOptionPane.showInputDialog("Digite a descrição EXATA do item que deseja deletar:");
+
+            Item itemParaDeletar = null;
+            for(Item item : leilao.getItens()){
+                if(item.getDescricao().equalsIgnoreCase(descItem)) {
+                    itemParaDeletar = item;
+                    break;
+                }
+            }
+
+            if (itemParaDeletar != null) {
+                int confirmacao = JOptionPane.showConfirmDialog(null, "Tem certeza que deseja deletar o item '" + itemParaDeletar.getDescricao() + "'?", "Confirmar Deleção", JOptionPane.YES_NO_OPTION);
+                if(confirmacao == JOptionPane.YES_OPTION){
+                    leilaoOperacaoService.deletarItem(leilao, itemParaDeletar);
+                    JOptionPane.showMessageDialog(null, "Item deletado com sucesso!");
+                }
+            } else {
+                JOptionPane.showMessageDialog(null, "Item não encontrado.", "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Erro ao deletar item: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // --- FIM DO NOVO BLOCO DE GERENCIAMENTO DE ITENS ---
 }

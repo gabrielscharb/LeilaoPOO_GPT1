@@ -7,21 +7,16 @@ import leilao.modelo.Participante;
 
 public interface ILeilaoOperacoes {
 
-    // Adiciona um item a um leilão específico
+    // Métodos existentes
     void adicionarItem(Leilao leilao, Item item);
-
-    // Adiciona um participante a um leilão específico
     void adicionarParticipante(Leilao leilao, Participante participante);
-
-    // Inicia um leilão, tornando-o ativo para lances
-    void iniciarLeilao(Leilao leilao);
-
-    // A operação principal: um participante dá um lance em um item
     void realizarLance(Participante participante, Item item, double valor);
-
-    // Encerra um leilão e determina os vencedores
-    void finalizarLeilao(Leilao leilao);
-
-    // Retorna o lance vencedor de um item específico
     Lance obterLanceVencedor(Item item);
+
+    // --- MÉTODOS NOVOS ---
+    // Ação para editar os dados de um item existente.
+    void editarItem(Item itemParaEditar, String novaDescricao, double novoValor);
+
+    // Ação para remover um item de dentro de um leilão.
+    void deletarItem(Leilao leilao, Item itemParaDeletar);
 }
